@@ -1,0 +1,229 @@
+🎯 Build a complete, production-quality web application using:
+- Backend: Python (Django)
+- Frontend: HTML + Tailwind CSS + JavaScript
+- Database: SQLite (for demo)
+- Purpose: Campus Entity Resolution & Security Monitoring System
+
+---
+
+## 🌍 Project Overview
+The goal is to design an intelligent web platform that unifies campus data (student/staff/asset logs), resolves cross-source identities, reconstructs timelines, predicts missing activity, and raises security alerts — all with a clean, responsive dashboard interface.
+
+---
+
+## 📁 Project Structure
+campus_monitor/
+│
+├── dashboard/
+│ ├── templates/dashboard/
+│ │ ├── base.html
+│ │ ├── index.html
+│ │ ├── search.html
+│ │ ├── timeline.html
+│ │ ├── predict.html
+│ │ └── alerts.html
+│ ├── static/dashboard/
+│ │ ├── styles.css
+│ │ ├── script.js
+│ │ └── icons/
+│ ├── data/
+│ │ ├── entities.json
+│ │ ├── timeline.json
+│ │ ├── predictions.json
+│ │ └── alerts.json
+│ ├── views.py
+│ ├── urls.py
+│ ├── models.py
+│ └── admin.py
+│
+├── campus_monitor/
+│ ├── settings.py
+│ ├── urls.py
+│ ├── wsgi.py
+│ └── asgi.py
+│
+└── manage.py
+
+yaml
+Copy code
+
+---
+
+## 🧠 Core Pages & Features
+
+### 🏠 1. Home Page (`index.html`)
+- Clean hero section with gradient background, large title:
+  **“Campus Entity Resolution & Security Monitoring System”**
+- Short 2-line mission statement.
+- 4 interactive cards linking to:
+  - Entity Search
+  - Timeline
+  - Predictions
+  - Alerts
+- Include live clock, date, and an animated background pattern (Tailwind + CSS).
+- Footer: “Built for Saptang Labs Challenge 2025 — Team [Your Name/ID]”
+
+---
+
+### 🔍 2. Entity Search Page (`search.html`)
+- Dropdown: `Entity Type` → [Student, Staff, Asset, Device]
+- Input bar: Search by name, email, or ID
+- “Search” button → fetch dummy JSON from `/api/search/`
+- Display results in a **data card grid**:
+  - Entity name, type, source (Wi-Fi / Card / Library)
+  - Confidence score (colored badge: Green >0.9, Yellow 0.7–0.9, Red <0.7)
+  - Last seen time
+- Use Tailwind cards with hover animation.
+- Add loading spinner when fetching.
+
+---
+
+### 🕒 3. Timeline Page (`timeline.html`)
+- Show chronological activities with timestamps and icons (🪪, 📚, 📡, 🚪)
+- Visual representation (vertical line or flow):
+[09:10] Swipe at Gate_1
+[10:30] Library Checkout
+[11:05] Wi-Fi AP_23 Connected
+[13:20] Lab Booking
+
+yaml
+Copy code
+- Each event clickable to expand details.
+- Fetch from `/api/timeline/`.
+- Optionally show “Summary of Day” at top.
+
+---
+
+### 🧭 4. Predictions Page (`predict.html`)
+- Simulate intelligent inference with a clean “prediction card”.
+- Display:
+- **Predicted Location:** e.g. “Likely in Lab 3”
+- **Confidence Score:** e.g. 82%
+- **Explainability Text:** e.g. “Based on last seen AP_23 and usual time gap (1h 15m).”
+- Animated gauge or progress bar for confidence visualization (JS).
+- Fetched from `/api/predict/`.
+
+---
+
+### 🚨 5. Alerts Page (`alerts.html`)
+- Table of entities inactive for >12 hours.
+- Columns: Entity | Type | Last Seen | Hours Since | Status
+- Rows with issues highlighted in red/amber.
+- Include “Resolve Alert” button (non-functional placeholder).
+- Pull data from `/api/alerts/`.
+
+---
+
+## ⚙️ Backend (Django)
+- **Models (optional for demo)**: Entity, Event, Prediction, Alert.
+- **Views**:
+- `/api/search/` → returns entities.json
+- `/api/timeline/` → returns timeline.json
+- `/api/predict/` → returns predictions.json
+- `/api/alerts/` → returns alerts.json
+- **Static JSON simulation** in `/dashboard/data/`
+- **Frontend pages** load via `render()` and make JS `fetch()` calls to above APIs.
+
+---
+
+## 🎨 UI & Design
+- TailwindCSS via CDN.
+- Navbar with gradient background and hover underline animation.
+- Use Lucide or HeroIcons (Tailwind icons).
+- Card-based layout, rounded corners, soft shadows, consistent color palette (blue, indigo, slate).
+- Responsive for desktop/tablet/mobile.
+- Smooth transition animations (`transition duration-300 ease-in-out`).
+- Include favicon and project title in `<head>`.
+
+---
+
+## 💾 Sample JSON Data
+
+**entities.json**
+```json
+[
+{
+  "name": "Rahul Patel",
+  "type": "Student",
+  "source": "Wi-Fi Log",
+  "timestamp": "2025-10-07T09:15",
+  "confidence": 0.93
+},
+{
+  "name": "Rahul Patel",
+  "type": "Student",
+  "source": "Library",
+  "timestamp": "2025-10-07T10:30",
+  "confidence": 0.88
+}
+]
+timeline.json
+
+json
+Copy code
+[
+  {"time": "09:10", "event": "Swipe at Gate_1"},
+  {"time": "10:30", "event": "Library Checkout"},
+  {"time": "11:05", "event": "Connected to Wi-Fi (AP_23)"},
+  {"time": "13:20", "event": "Lab Booking"}
+]
+predictions.json
+
+json
+Copy code
+{
+  "entity": "Rahul Patel",
+  "predicted_location": "Lab 3",
+  "confidence": 0.82,
+  "explanation": "Last seen near AP_23; usual session lasts ~1.2 hours."
+}
+alerts.json
+
+json
+Copy code
+[
+  {"entity": "Laptop-124", "type": "Asset", "last_seen": "2025-10-06T18:00", "status": "Inactive >12h"},
+  {"entity": "John Doe", "type": "Staff", "last_seen": "2025-10-06T20:10", "status": "No logs >12h"}
+]
+🧰 Additional Enhancements
+Reusable base template (base.html) with {% block content %}.
+
+Use Django template inheritance.
+
+Sticky navbar with active page highlight.
+
+Add small JS utility to format timestamps (“2 hours ago”).
+
+Include a dark mode toggle using Tailwind’s dark: variants.
+
+Add hover tooltips for confidence and explainability.
+
+Include “Download Report (PDF)” placeholder button on Alerts or Predictions page.
+
+▶️ Run Instructions
+Install dependencies:
+
+nginx
+Copy code
+pip install django
+Run server:
+
+nginx
+Copy code
+python manage.py runserver
+Visit:
+
+arduino
+Copy code
+http://localhost:8000
+Explore all sections with interactive dummy data and responsive UI.
+
+🎯 Deliverable:
+A fully interactive Django + Tailwind + JS web application simulating a real Campus Entity Resolution & Security Monitoring System with explainable analytics and alert visualization.
+
+yaml
+Copy code
+
+---
+
+Would you like me to now generate the **exact `views.py`, `urls.py`, and `base.html` templates** th
