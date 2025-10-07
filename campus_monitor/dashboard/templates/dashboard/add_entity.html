@@ -1,0 +1,41 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-6 py-12 max-w-3xl">
+    <h1 class="text-3xl font-bold mb-6">Add Entity</h1>
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <form method="post">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 gap-4">
+                <div>
+                    <label class="block text-gray-700 mb-1">Name</label>
+                    <input name="name" value="{{ initial.name|default:'' }}" class="w-full px-4 py-2 border rounded" placeholder="e.g., John Doe or Laptop-12">
+                    {% if errors.name %}<p class="text-red-600 text-sm">{{ errors.name }}</p>{% endif %}
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-1">Entity Type</label>
+                    <input name="entity_type" value="{{ initial.entity_type|default:'' }}" class="w-full px-4 py-2 border rounded" placeholder="Student, Staff, Asset">
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-1">Last Seen (ISO)</label>
+                    <input name="last_seen" value="{{ initial.last_seen|default:'' }}" class="w-full px-4 py-2 border rounded" placeholder="YYYY-MM-DDTHH:MM">
+                    {% if errors.last_seen %}<p class="text-red-600 text-sm">{{ errors.last_seen }}</p>{% endif %}
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-1">Confidence (0.0 - 1.0)</label>
+                    <input name="confidence" value="{{ initial.confidence|default:'' }}" class="w-full px-4 py-2 border rounded" placeholder="0.85">
+                    {% if errors.confidence %}<p class="text-red-600 text-sm">{{ errors.confidence }}</p>{% endif %}
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-1">Metadata (JSON)</label>
+                    <textarea name="metadata" class="w-full px-4 py-2 border rounded" rows="4">{{ initial.metadata|default:'' }}</textarea>
+                    {% if errors.metadata %}<p class="text-red-600 text-sm">{{ errors.metadata }}</p>{% endif %}
+                </div>
+                <div class="pt-4">
+                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded">Create Entity</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

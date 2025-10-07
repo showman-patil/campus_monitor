@@ -37,49 +37,85 @@
     <div id="results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
 </div>
 
+{% if initial_entities %}
+<script id="initial-entities" type="application/json">{{ initial_entities|safe }}</script>
+{% endif %}
+
 <script>
-async function searchEntities() {
-    const loading = document.getElementById('loading');
+function renderResults(data) {
     const results = document.getElementById('results');
-    
-    loading.classList.remove('hidden');
     results.innerHTML = '';
-    
-    const response = await fetch('/api/search/');
-    const data = await response.json();
-    
-    loading.classList.add('hidden');
-    
     const entityType = document.getElementById('entityType').value;
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    
+
     const filtered = data.filter(entity => {
         const matchesType = !entityType || entity.type === entityType;
         const matchesSearch = !searchTerm || entity.name.toLowerCase().includes(searchTerm);
         return matchesType && matchesSearch;
     });
-    
+
     filtered.forEach(entity => {
         const confidence = entity.confidence;
         const badgeColor = confidence > 0.9 ? 'bg-green-500' : confidence > 0.7 ? 'bg-yellow-500' : 'bg-red-500';
-        
+
         const card = document.createElement('div');
         card.className = 'bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition duration-300';
+
+        // Build the details section conditionally
+        let details = '';
+        if (entity.source) {
+            details += `<p><strong>Source:</strong> ${entity.source}</p>`;
+        }
+        if (entity.timestamp) {
+            details += `<p><strong>Last Seen:</strong> ${new Date(entity.timestamp).toLocaleString()}</p>`;
+        }
+
         card.innerHTML = `
             <div class="flex justify-between items-start mb-4">
-                <h3 class="text-xl font-bold text-gray-800">${entity.name}</h3>
-                <span class="${badgeColor} text-white text-sm px-3 py-1 rounded-full">${(confidence * 100).toFixed(0)}%</span>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800">${entity.name}</h3>
+                    <div class="text-sm text-gray-500 mt-1">Type: <span class="font-semibold">${entity.type}</span></div>
+                </div>
+                <div class="text-right">
+                    <div class="${badgeColor} text-white text-sm px-3 py-1 rounded-full">${(confidence * 100).toFixed(0)}%</div>
+                </div>
             </div>
             <div class="space-y-2 text-gray-600">
-                <p><strong>Type:</strong> ${entity.type}</p>
-                <p><strong>Source:</strong> ${entity.source}</p>
-                <p><strong>Last Seen:</strong> ${new Date(entity.timestamp).toLocaleString()}</p>
+                ${details}
             </div>
         `;
         results.appendChild(card);
     });
 }
 
+async function searchEntities() {
+    const loading = document.getElementById('loading');
+    loading.classList.remove('hidden');
+
+    let data = [];
+    // server may provide initial_entities in a JSON script tag
+    const script = document.getElementById('initial-entities');
+    if (script) {
+        try {
+            data = JSON.parse(script.textContent || script.innerText || '[]');
+        } catch (e) {
+            console.warn('Failed parsing initial entities JSON', e);
+            data = [];
+        }
+    } else {
+        const response = await fetch('/api/search/');
+        data = await response.json();
+    }
+
+    loading.classList.add('hidden');
+    renderResults(data);
+}
+
+// re-run when filters change
+document.getElementById('entityType').addEventListener('change', searchEntities);
+document.getElementById('searchInput').addEventListener('input', searchEntities);
+
+// initialize from server data if provided, otherwise fetch
 searchEntities();
 </script>
 {% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Create your account</h2>
+            <p class="mt-2 text-center text-sm text-gray-600">Join Campus Monitor to view timelines and alerts</p>
+        </div>
+        <form class="mt-8 space-y-6 bg-white p-8 rounded-lg shadow" action="" method="POST" novalidate>
+            {% csrf_token %}
+            <div class="rounded-md shadow-sm -space-y-px">
+                <div class="mb-4">
+                    <label for="username" class="sr-only">Username</label>
+                    <input id="username" name="username" type="text" autocomplete="username" required
+                                 value="{{ initial.username }}"
+                                 class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                 placeholder="Username">
+                    {% if errors.username %}
+                        <p class="text-red-600 text-sm mt-1">{{ errors.username }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="password1" class="sr-only">Password</label>
+                    <input id="password1" name="password1" type="password" required
+                                 class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                 placeholder="Password (min 8 characters)">
+                    {% if errors.password1 %}
+                        <p class="text-red-600 text-sm mt-1">{{ errors.password1 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="password2" class="sr-only">Confirm password</label>
+                    <input id="password2" name="password2" type="password" required
+                                 class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                 placeholder="Confirm password">
+                    {% if errors.password2 %}
+                        <p class="text-red-600 text-sm mt-1">{{ errors.password2 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                    Sign up
+                </button>
+            </div>
+            <p class="text-sm text-center text-gray-600">Already have an account? <a href="{% url 'login' %}" class="text-indigo-600">Log in</a></p>
+        </form>
+    </div>
+</div>
+{% endblock %}
+<script>
+// simple client-side helper: show password match and allow toggling visibility
+document.addEventListener('DOMContentLoaded', function(){
+    const p1 = document.getElementById('password1');
+    const p2 = document.getElementById('password2');
+    if (p1 && p2) {
+        const status = document.createElement('p');
+        status.className = 'text-sm mt-2';
+        p2.parentNode.appendChild(status);
+        function check() {
+            if (!p2.value) { status.textContent = ''; return; }
+            if (p1.value === p2.value) {
+                status.textContent = 'Passwords match';
+                status.className = 'text-green-600 text-sm mt-2';
+            } else {
+                status.textContent = 'Passwords do not match';
+                status.className = 'text-red-600 text-sm mt-2';
+            }
+        }
+        p1.addEventListener('input', check);
+        p2.addEventListener('input', check);
+    }
+});
+</script>

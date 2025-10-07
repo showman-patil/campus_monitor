@@ -62,6 +62,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # provide server_date (from DB) to all templates
+                'campus_monitor.dashboard.context_processors.server_date',
             ],
         },
     },
