@@ -1,0 +1,21 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<div class="container mx-auto px-6 py-12">
+  <h1 class="text-2xl font-bold mb-4">Wi-Fi Logs</h1>
+  <div class="space-y-3">
+    {% for w in wlogs %}
+      <div class="bg-white p-3 rounded shadow">
+        <div class="flex justify-between">
+          <div>
+            <div class="text-sm text-gray-600">{{ w.device_hash }} @ {{ w.ap_id }}</div>
+            <div class="text-xs text-gray-500">RSSI: {{ w.rssi }}</div>
+          </div>
+          <div class="text-sm text-gray-500">{{ w.timestamp }}</div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="text-gray-500">No wifi logs</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

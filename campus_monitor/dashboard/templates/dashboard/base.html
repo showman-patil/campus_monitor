@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campus Entity Resolution & Security Monitoring System</title>
     <link href="/static/dashboard/styles.css" rel="stylesheet">
+    <link href="/static/dashboard/theme.css" rel="stylesheet">
     <style>
         @keyframes gradient {
             0%, 100% { background-position: 0% 50%; }
@@ -14,52 +15,160 @@
             background-size: 200% 200%;
             animation: gradient 15s ease infinite;
         }
+    /* simple dropdown for datasets */
+    .dropdown { position: relative; }
+    .dropdown-content { position: absolute; background: white; color: #111827; min-width: 12rem; box-shadow: 0 8px 24px rgba(0,0,0,0.08); border-radius: 0.5rem; overflow: hidden; z-index: 60; }
+    .dropdown-content.hidden { display: none; }
+    .dropdown-content a { display: block; padding: 0.6rem 1rem; color: inherit; text-decoration: none; }
+    .dropdown-content a:hover { background: #eef2ff; }
+        /* mobile menu simple helpers */
+        .hidden-mobile { display: none; }
+        @media (min-width: 768px) {
+            .hidden-mobile { display: block; }
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <nav class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-6 py-4">
-            <div class="flex justify-between items-center">
-                <div class="text-xl font-bold">Campus Monitor</div>
-                <div class="flex space-x-6">
-                    <a href="/" class="hover:text-blue-200 transition duration-300 {% if request.path == '/' %}border-b-2 border-white{% endif %}">Home</a>
-                    <a href="/search/" class="hover:text-blue-200 transition duration-300 {% if request.path == '/search/' %}border-b-2 border-white{% endif %}">Search</a>
-                    <a href="/timeline/" class="hover:text-blue-200 transition duration-300 {% if request.path == '/timeline/' %}border-b-2 border-white{% endif %}">Timeline</a>
-                    <a href="/predict/" class="hover:text-blue-200 transition duration-300 {% if request.path == '/predict/' %}border-b-2 border-white{% endif %}">Predictions</a>
-                    <a href="/alerts/" class="hover:text-blue-200 transition duration-300 {% if request.path == '/alerts/' %}border-b-2 border-white{% endif %}">Alerts</a>
-                </div>
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
-                    {% if request.user.is_authenticated %}
-                        <span class="text-sm">Hello, {{ request.user.username }}</span>
-                        {% comment %}Add Entity link for staff/profile roles{% endcomment %}
-                        {% if user_is_staff %}
-                            <a href="{% url 'add_entity' %}" class="bg-white text-indigo-600 px-3 py-1 rounded">Add Entity</a>
+                    <div class="text-xl font-bold mobile-brand">Campus Monitor</div>
+                    <!-- desktop links -->
+                    <div class="hidden md:flex items-center space-x-3 text-sm">
+                        <a href="/" class="nav-link {% if request.path == '/' %}border-b-2 border-white{% endif %}">Home</a>
+                        <a href="/search/" class="nav-link {% if request.path == '/search/' %}border-b-2 border-white{% endif %}">Search</a>
+                        <a href="/timeline/" class="nav-link {% if request.path == '/timeline/' %}border-b-2 border-white{% endif %}">Timeline</a>
+                        <a href="/predict/" class="nav-link {% if request.path == '/predict/' %}border-b-2 border-white{% endif %}">Predictions</a>
+                        <a href="/alerts/" class="nav-link {% if request.path == '/alerts/' %}border-b-2 border-white{% endif %}">Alerts</a>
+                        <div class="dropdown">
+                            <button id="more-btn" aria-haspopup="true" aria-expanded="false" class="text-white/90 focus:outline-none nav-link" type="button">
+                                More <span class="more-caret" aria-hidden="true">▾</span>
+                            </button>
+                            <div id="more-menu" class="dropdown-content mt-2 hidden dataset-menu" role="menu" aria-label="More">
+                                <div class="more-group px-2 py-2">
+                                    <div class="group-title px-3 py-1">Quick</div>
+                                    <a class="more-item" role="menuitem" tabindex="-1" href="/timeline/">
+                                        <span class="more-item-icon">🕒</span>
+                                        <span class="more-item-content"><span class="more-item-title">Timeline</span><span class="more-item-desc">Reconstruct events</span></span>
+                                    </a>
+                                    <a class="more-item" role="menuitem" tabindex="-1" href="/predict/">
+                                        <span class="more-item-icon">🧭</span>
+                                        <span class="more-item-content"><span class="more-item-title">Predictions</span><span class="more-item-desc">AI-driven insights</span></span>
+                                    </a>
+                                    <a class="more-item" role="menuitem" tabindex="-1" href="/alerts/">
+                                        <span class="more-item-icon">🚨</span>
+                                        <span class="more-item-content"><span class="more-item-title">Alerts</span><span class="more-item-desc">Security notifications</span></span>
+                                    </a>
+                                </div>
+                                <div class="more-divider" aria-hidden="true"></div>
+                                <div class="more-group px-2 py-2">
+                                    <div class="group-title px-3 py-1">Data</div>
+                                    <a class="more-item" role="menuitem" tabindex="-1" href="{% url 'entity_list' %}">
+                                        <span class="more-item-icon">👥</span>
+                                        <span class="more-item-content"><span class="more-item-title">Entities</span><span class="more-item-desc">People and assets</span></span>
+                                    </a>
+                                    <a class="more-item" role="menuitem" tabindex="-1" href="{% url 'identifiers_list' %}">
+                                        <span class="more-item-icon">🪪</span>
+                                        <span class="more-item-content"><span class="more-item-title">Identifiers</span><span class="more-item-desc">IDs & badges</span></span>
+                                    </a>
+                                    <a class="more-item" role="menuitem" tabindex="-1" href="{% url 'swipes_list' %}">
+                                        <span class="more-item-icon">💳</span>
+                                        <span class="more-item-content"><span class="more-item-title">Swipes</span><span class="more-item-desc">Access logs</span></span>
+                                    </a>
+                                    <a class="more-item" role="menuitem" tabindex="-1" href="{% url 'wifi_list' %}">
+                                        <span class="more-item-icon">📶</span>
+                                        <span class="more-item-content"><span class="more-item-title">Wi‑Fi</span><span class="more-item-desc">Network sightings</span></span>
+                                    </a>
+                                    <a class="more-item" role="menuitem" tabindex="-1" href="{% url 'bookings_list' %}">
+                                        <span class="more-item-icon">📅</span>
+                                        <span class="more-item-content"><span class="more-item-title">Bookings</span><span class="more-item-desc">Room & resource bookings</span></span>
+                                    </a>
+                                    <a class="more-item" role="menuitem" tabindex="-1" href="{% url 'library_list' %}">
+                                        <span class="more-item-icon">📚</span>
+                                        <span class="more-item-content"><span class="more-item-title">Library</span><span class="more-item-desc">Checkouts & returns</span></span>
+                                    </a>
+                                    <a class="more-item" role="menuitem" tabindex="-1" href="{% url 'notes_list' %}">
+                                        <span class="more-item-icon">📝</span>
+                                        <span class="more-item-content"><span class="more-item-title">Notes</span><span class="more-item-desc">Manual observations</span></span>
+                                    </a>
+                                    <a class="more-item" role="menuitem" tabindex="-1" href="{% url 'resolution_links_list' %}">
+                                        <span class="more-item-icon">🔗</span>
+                                        <span class="more-item-content"><span class="more-item-title">Resolution Links</span><span class="more-item-desc">Entity matches</span></span>
+                                    </a>
+                                    <a class="more-item" role="menuitem" tabindex="-1" href="{% url 'provenance_list' %}">
+                                        <span class="more-item-icon">🧾</span>
+                                        <span class="more-item-content"><span class="more-item-title">Provenance</span><span class="more-item-desc">Source metadata</span></span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <!-- mobile menu button (animated hamburger) -->
+                    <button id="nav-toggle" aria-label="Toggle navigation" aria-controls="nav-menu" aria-expanded="false" class="md:hidden bg-white text-indigo-600 px-2 py-1 rounded focus:outline-none hamburger" type="button">
+                        <span class="hamburger-box">
+                            <span class="hamburger-inner"></span>
+                        </span>
+                    </button>
+                    <div class="hidden md:flex items-center space-x-4">
+                        {% if request.user.is_authenticated %}
+                            <div class="text-sm">Hello, {{ request.user.username }}</div>
+                            <div class="text-xs text-white/80 ml-2">| Server: {{ server_date|date:"Y-m-d H:i" }}</div>
+                            {% if user_is_staff %}
+                                <a href="{% url 'add_entity' %}" class="btn-ghost">Add Entity</a>
+                            {% endif %}
+                            <form method="post" action="{% url 'logout' %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-ghost">Logout</button>
+                            </form>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="btn-primary">Login</a>
+                            <a href="{% url 'signup' %}" class="btn-ghost">Sign up</a>
                         {% endif %}
-                        <form method="post" action="{% url 'logout' %}">
-                            {% csrf_token %}
-                            <button type="submit" class="bg-white text-indigo-600 px-3 py-1 rounded">Logout</button>
-                        </form>
-                    {% else %}
-                        <a href="{% url 'login' %}" class="bg-white text-indigo-600 px-3 py-1 rounded">Login</a>
-                        <a href="{% url 'signup' %}" class="text-white border border-white px-3 py-1 rounded">Sign up</a>
-                    {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- mobile menu (hidden by default) -->
+            <div id="nav-menu" class="mt-3 hidden md:hidden">
+                <div class="bg-indigo-700/40 rounded p-3 space-y-2">
+                    <a href="/" class="block">Home</a>
+                    <a href="/search/" class="block">Search</a>
+                    <a href="/timeline/" class="block">Timeline</a>
+                    <a href="/predict/" class="block">Predictions</a>
+                    <a href="/alerts/" class="block">Alerts</a>
+                    <div class="border-t border-indigo-600 pt-2">
+                        <div class="font-semibold">Datasets</div>
+                        <a href="{% url 'entity_list' %}" class="block">Entities</a>
+                        <a href="{% url 'identifiers_list' %}" class="block">Identifiers</a>
+                        <a href="{% url 'swipes_list' %}" class="block">Swipes</a>
+                        <a href="{% url 'wifi_list' %}" class="block">Wi‑Fi</a>
+                        <a href="{% url 'bookings_list' %}" class="block">Bookings</a>
+                        <a href="{% url 'library_list' %}" class="block">Library</a>
+                        <a href="{% url 'notes_list' %}" class="block">Notes</a>
+                        <a href="{% url 'resolution_links_list' %}" class="block">Resolution Links</a>
+                        <a href="{% url 'provenance_list' %}" class="block">Provenance</a>
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
 
     <main>
-        <!-- <div class="container mx-auto px-6 py-6">
+            <div class="container mx-auto px-6 py-6">
             {% if messages %}
                 <div class="space-y-2">
                     {% for message in messages %}
-                        <div class="p-3 rounded bg-indigo-50 border-indigo-200">
-                            <p class="text-sm text-gray-800">{{ message }}</p>
+                        <div class="msg {% if message.tags %}{{ message.tags }}{% endif %}">
+                            <p class="text-sm">{{ message }}</p>
                         </div>
                     {% endfor %}
                 </div>
             {% endif %}
-        </div> -->
+        </div>
         {% block content %}
         {% endblock %}
     </main>

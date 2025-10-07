@@ -11,25 +11,25 @@
 
 <div class="container mx-auto px-6 py-12">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <a href="/search/" class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
+        <a href="/search/" class="card p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
             <div class="text-4xl mb-4">🔍</div>
             <h3 class="text-xl font-bold text-gray-800 mb-2">Entity Search</h3>
             <p class="text-gray-600">Search and resolve campus entities with confidence scores</p>
         </a>
 
-        <a href="/timeline/" class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
+        <a href="/timeline/" class="card p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
             <div class="text-4xl mb-4">🕒</div>
             <h3 class="text-xl font-bold text-gray-800 mb-2">Timeline</h3>
             <p class="text-gray-600">View chronological activity and event reconstruction</p>
         </a>
 
-        <a href="/predict/" class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
+        <a href="/predict/" class="card p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
             <div class="text-4xl mb-4">🧭</div>
             <h3 class="text-xl font-bold text-gray-800 mb-2">Predictions</h3>
             <p class="text-gray-600">AI-powered location inference and activity prediction</p>
         </a>
 
-        <a href="/alerts/" class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
+        <a href="/alerts/" class="card p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
             <div class="text-4xl mb-4">🚨</div>
             <h3 class="text-xl font-bold text-gray-800 mb-2">Alerts</h3>
             <p class="text-gray-600">Security monitoring and inactive entity detection</p>
@@ -37,7 +37,7 @@
     </div>
 
     <div class="mt-12 text-center">
-        <div class="bg-white rounded-lg shadow-lg p-6 inline-block">
+        <div class="card p-6 inline-block">
             <div class="text-gray-600 mb-2">Current Time</div>
             <div id="clock" class="text-3xl font-bold text-indigo-600">{{ server_date|time:"H:i:s" }}</div>
             <div id="date" class="text-gray-500 mt-2">{{ server_date|date:"l, F j, Y" }}</div>

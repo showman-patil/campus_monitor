@@ -1,0 +1,28 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<div class="container mx-auto px-6 py-12">
+  <h1 class="text-2xl font-bold mb-4">Identifiers</h1>
+  <div class="bg-white rounded shadow p-4">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-gray-600">
+          <th>Type</th><th>Value</th><th>Entity</th><th>Source</th><th>Confidence</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for id in identifiers %}
+        <tr class="border-t">
+          <td>{{ id.id_type }}</td>
+          <td class="font-mono">{{ id.id_value }}</td>
+          <td><a href="{% url 'entity_detail' id.entity.id %}">{{ id.entity.name }}</a></td>
+          <td>{{ id.source }}</td>
+          <td>{{ id.confidence }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No identifiers</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

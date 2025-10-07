@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.utils import timezone
-from .models import TimelineEvent, Entity, Prediction, Alert
+from .models import TimelineEvent, Entity, Prediction, Alert, Identifier, SwipeLog, WifiLog, Booking, LibraryCheckout, Note, ResolutionLink, DataProvenance
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.contrib.auth.models import User
@@ -63,7 +63,36 @@ def search_page(request):
         })
 
     import json
-    return render(request, 'dashboard/search.html', {'initial_entities': json.dumps(initial)})
+
+    # compute simple stats for the UI
+    total = len(good_entities)
+    # last updated is the most recent last_seen among the good entities, or now
+    last_updated_dt = None
+    for e in good_entities:
+        if e.last_seen:
+            if not last_updated_dt or e.last_seen > last_updated_dt:
+                last_updated_dt = e.last_seen
+    if not last_updated_dt:
+        # fallback to the latest timeline event or now
+        latest_event = TimelineEvent.objects.order_by('-timestamp').first()
+        last_updated_dt = latest_event.timestamp if latest_event else timezone.now()
+
+    # counts by type
+    type_counts = {}
+    for e in good_entities:
+        t = (e.entity_type or 'Unknown')
+        type_counts[t] = type_counts.get(t, 0) + 1
+
+    stats = {
+        'count': total,
+        'last_updated': last_updated_dt.isoformat() if last_updated_dt else None,
+        'types': type_counts,
+    }
+
+    return render(request, 'dashboard/search.html', {
+        'initial_entities': json.dumps(initial),
+        'search_stats': json.dumps(stats),
+    })
 
 
 def add_entity_view(request):
@@ -228,20 +257,94 @@ def api_search(request):
 
     Frontend fields: name, type, source, timestamp, confidence
     """
-    qs = Entity.objects.all().order_by('-last_seen')
-    result = []
+    # support query params: q (search), type, min_confidence, recent_hours, page, page_size
+    q = request.GET.get('q', '').strip()
+    ent_type = request.GET.get('type', '').strip()
+    min_conf = request.GET.get('min_confidence')
+    recent_hours = request.GET.get('recent_hours')
+    page = int(request.GET.get('page') or 1)
+    page_size = int(request.GET.get('page_size') or 50)
+
+    qs = Entity.objects.all()
+
+    # only include entities with metadata.source and last_seen (full info)
+    from django.db.models import Q
+    qs = qs.filter(~Q(last_seen=None))
+    # metadata is JSONField - filter for presence of source where possible
+    try:
+        qs = qs.filter(metadata__has_key='source')
+    except Exception:
+        # if JSONField backend doesn't support has_key, we'll filter in Python later
+        pass
+
+    # user-based staff restriction: treat Profile.role Staff/Admin as staff
+    user_is_staff = False
+    try:
+        if request.user.is_authenticated:
+            prof = getattr(request.user, 'profile', None)
+            if prof and getattr(prof, 'role', None) in ('Staff', 'Admin'):
+                user_is_staff = True
+            else:
+                user_is_staff = getattr(request.user, 'is_staff', False)
+    except Exception:
+        user_is_staff = getattr(request.user, 'is_staff', False)
+
+    if user_is_staff:
+        # staff users should see only Students per previous behavior
+        qs = qs.filter(entity_type__iexact='Student')
+
+    if q:
+        qs = qs.filter(name__icontains=q)
+    if ent_type:
+        qs = qs.filter(entity_type__iexact=ent_type)
+    if min_conf:
+        try:
+            min_conf_val = float(min_conf)
+            qs = qs.filter(confidence__gte=min_conf_val)
+        except Exception:
+            pass
+    if recent_hours:
+        try:
+            hours = float(recent_hours)
+            cutoff = timezone.now() - timezone.timedelta(hours=hours)
+            qs = qs.filter(last_seen__gte=cutoff)
+        except Exception:
+            pass
+
+    total = qs.count()
+    # pagination
+    start = (page - 1) * page_size
+    end = start + page_size
+    qs = qs.order_by('-last_seen')[start:end]
+
+    results = []
+    type_counts = {}
+    latest_seen = None
     for e in qs:
-        source = None
+        source = ''
         if e.metadata and isinstance(e.metadata, dict):
-            source = e.metadata.get('source')
-        result.append({
+            source = e.metadata.get('source') or ''
+        if e.last_seen and (not latest_seen or e.last_seen > latest_seen):
+            latest_seen = e.last_seen
+        t = e.entity_type or 'Unknown'
+        type_counts[t] = type_counts.get(t, 0) + 1
+        results.append({
             'name': e.name,
-            'type': e.entity_type or '',
-            'source': source or '',
+            'type': t,
+            'source': source,
             'timestamp': e.last_seen.isoformat() if e.last_seen else None,
             'confidence': e.confidence if e.confidence is not None else 0.0,
         })
-    return JsonResponse(result, safe=False)
+
+    payload = {
+        'results': results,
+        'count': total,
+        'types': type_counts,
+        'last_updated': latest_seen.isoformat() if latest_seen else None,
+        'page': page,
+        'page_size': page_size,
+    }
+    return JsonResponse(payload, safe=False)
 
 def api_timeline(request):
     """Return timeline events from the DB in a simplified shape for the UI.
@@ -301,3 +404,114 @@ def api_alerts(request):
             'message': a.message,
         })
     return JsonResponse(result, safe=False)
+
+
+def entity_list(request):
+    """Simple paginated list of entities with quick links to detail pages."""
+    qs = Entity.objects.all().order_by('-last_seen')[:200]
+    entities = []
+    for e in qs:
+        entities.append({
+            'id': e.id,
+            'name': e.name,
+            'type': e.entity_type,
+            'last_seen': e.last_seen.isoformat() if e.last_seen else None,
+            'confidence': e.confidence if e.confidence is not None else 0.0,
+        })
+    import json
+    return render(request, 'dashboard/entities.html', {'entities': entities, 'entities_json': json.dumps(entities)})
+
+
+def entity_detail(request, pk):
+    """Aggregate a timeline for a single entity using multiple sources."""
+    try:
+        e = Entity.objects.get(pk=pk)
+    except Entity.DoesNotExist:
+        messages.error(request, 'Entity not found.')
+        return redirect('entity_list')
+
+    # gather events from various tables
+    items = []
+    # timeline events
+    for ev in TimelineEvent.objects.filter(entity=e).order_by('-timestamp'):
+        items.append({'time': ev.timestamp, 'kind': 'timeline', 'summary': ev.event_type or ev.description, 'details': ev.description, 'source': 'timeline', 'raw': ev.data})
+    # swipe logs by identifiers (match by card_id)
+    ids = [ident.id_value for ident in e.identifiers.all() if ident.id_type and ident.id_value]
+    if ids:
+        swipes = SwipeLog.objects.filter(card_id__in=ids).order_by('-timestamp')[:200]
+        for s in swipes:
+            items.append({'time': s.timestamp, 'kind': 'swipe', 'summary': f'Swipe @ {s.location}', 'details': s.raw or {}, 'source': 'swipe', 'raw': s.raw})
+    # wifi logs by device_hash
+    device_ids = [ident.id_value for ident in e.identifiers.all() if ident.id_type == 'device_hash']
+    if device_ids:
+        wlogs = WifiLog.objects.filter(device_hash__in=device_ids).order_by('-timestamp')[:200]
+        for w in wlogs:
+            items.append({'time': w.timestamp, 'kind': 'wifi', 'summary': f'WiFi @ {w.ap_id}', 'details': {'rssi': w.rssi}, 'source': 'wifi', 'raw': w.raw})
+
+    # bookings
+    for b in Booking.objects.filter(entity=e).order_by('-start'):
+        items.append({'time': b.start, 'kind': 'booking', 'summary': f'Booking {b.resource}', 'details': {'start': b.start, 'end': b.end}, 'source': 'booking', 'raw': b.metadata})
+
+    # library checkouts
+    for c in LibraryCheckout.objects.filter(entity=e).order_by('-checkout_time'):
+        items.append({'time': c.checkout_time, 'kind': 'checkout', 'summary': f'Checked out {c.item}', 'details': {'due': c.due_time}, 'source': 'library', 'raw': c.metadata})
+
+    # notes
+    for n in Note.objects.filter(entity=e).order_by('-timestamp'):
+        items.append({'time': n.timestamp, 'kind': 'note', 'summary': f'Note: { (n.text[:80] + "...") if len(n.text) > 80 else n.text }', 'details': {'text': n.text}, 'source': n.source, 'raw': n.metadata})
+
+    # sort descending
+    items_sorted = sorted(items, key=lambda x: x['time'] or timezone.now(), reverse=True)
+
+    # identifiers and other related data
+    idents = list(e.identifiers.all())
+    alerts = list(e.alerts.all())
+    preds = list(e.predictions.all())
+
+    return render(request, 'dashboard/entity_detail.html', {
+        'entity': e,
+        'items': items_sorted,
+        'identifiers': idents,
+        'alerts': alerts,
+        'predictions': preds,
+    })
+
+
+def identifiers_list(request):
+    ids = Identifier.objects.select_related('entity').order_by('-created_at')[:500]
+    return render(request, 'dashboard/identifiers.html', {'identifiers': ids})
+
+
+def swipes_list(request):
+    sw = SwipeLog.objects.order_by('-timestamp')[:500]
+    return render(request, 'dashboard/swipes.html', {'swipes': sw})
+
+
+def wifi_list(request):
+    wl = WifiLog.objects.order_by('-timestamp')[:500]
+    return render(request, 'dashboard/wifi.html', {'wlogs': wl})
+
+
+def bookings_list(request):
+    bs = Booking.objects.order_by('-start')[:200]
+    return render(request, 'dashboard/bookings.html', {'bookings': bs})
+
+
+def library_list(request):
+    cs = LibraryCheckout.objects.order_by('-checkout_time')[:200]
+    return render(request, 'dashboard/library.html', {'checkouts': cs})
+
+
+def notes_list(request):
+    ns = Note.objects.order_by('-timestamp')[:500]
+    return render(request, 'dashboard/notes.html', {'notes': ns})
+
+
+def resolution_links_list(request):
+    rl = ResolutionLink.objects.order_by('-created_at')[:500]
+    return render(request, 'dashboard/resolution_links.html', {'links': rl})
+
+
+def provenance_list(request):
+    pv = DataProvenance.objects.order_by('-imported_at')[:500]
+    return render(request, 'dashboard/provenance.html', {'prov': pv})

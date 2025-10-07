@@ -48,6 +48,8 @@ class Command(BaseCommand):
         if os.path.exists(entities_path):
             with open(entities_path, encoding='utf-8') as f:
                 data = json.load(f)
+            if isinstance(data, dict):
+                data = [data]
             for item in data:
                 name = item.get('entity') or item.get('name')
                 etype = item.get('type')
@@ -76,6 +78,8 @@ class Command(BaseCommand):
         if os.path.exists(timeline_path):
             with open(timeline_path, encoding='utf-8') as f:
                 data = json.load(f)
+            if isinstance(data, dict):
+                data = [data]
             for item in data:
                 # assume timeline items have {time, event, entity}
                 ts = parse_datetime(item.get('time') or item.get('timestamp'))
@@ -100,8 +104,14 @@ class Command(BaseCommand):
         if os.path.exists(predictions_path):
             with open(predictions_path, encoding='utf-8') as f:
                 data = json.load(f)
+            if isinstance(data, dict):
+                data = [data]
             for item in data:
-                name = item.get('entity')
+                if isinstance(item, str):
+                    name = item
+                    item = {}
+                else:
+                    name = item.get('entity')
                 entity = Entity.objects.filter(name=name).first() if name else None
                 predicted_time = parse_datetime(item.get('predicted_time') or item.get('time'))
                 Prediction.objects.update_or_create(
@@ -121,8 +131,14 @@ class Command(BaseCommand):
         if os.path.exists(alerts_path):
             with open(alerts_path, encoding='utf-8') as f:
                 data = json.load(f)
+            if isinstance(data, dict):
+                data = [data]
             for item in data:
-                name = item.get('entity')
+                if isinstance(item, str):
+                    name = item
+                    item = {}
+                else:
+                    name = item.get('entity')
                 entity = Entity.objects.filter(name=name).first() if name else None
                 Alert.objects.create(
                     entity=entity,

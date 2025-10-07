@@ -2,10 +2,10 @@
 
 {% block content %}
 <div class="container mx-auto px-6 py-12">
-    <h1 class="text-4xl font-bold text-gray-800 mb-8">Entity Search</h1>
+    <h1 class="page-title">Entity Search</h1>
     
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="card p-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div>
                 <label class="block text-gray-700 mb-2">Entity Type</label>
                 <select id="entityType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
@@ -26,6 +26,29 @@
                     </button>
                 </div>
             </div>
+            <div class="hidden md:block">
+                <label class="block text-gray-700 mb-2">Quick</label>
+                <div class="flex gap-2">
+                    <button onclick="applyQuick('recent')" class="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">Recent</button>
+                    <button onclick="applyQuick('high_conf')" class="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">High Confidence</button>
+                    <button onclick="applyQuick('all')" class="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200">All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="summary" class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="card p-4">
+            <div class="text-sm text-gray-500">Total entities</div>
+            <div id="stat-count" class="text-2xl font-bold text-gray-800">—</div>
+        </div>
+        <div class="card p-4">
+            <div class="text-sm text-gray-500">Last updated</div>
+            <div id="stat-last" class="text-lg text-gray-700">—</div>
+        </div>
+        <div class="card p-4">
+            <div class="text-sm text-gray-500">Top types</div>
+            <div id="stat-types" class="text-sm text-gray-700">—</div>
         </div>
     </div>
 
@@ -40,26 +63,22 @@
 {% if initial_entities %}
 <script id="initial-entities" type="application/json">{{ initial_entities|safe }}</script>
 {% endif %}
+{% if search_stats %}
+<script id="search-stats" type="application/json">{{ search_stats|safe }}</script>
+{% endif %}
 
 <script>
-function renderResults(data) {
+function renderResultsFromPayload(payload) {
     const results = document.getElementById('results');
     results.innerHTML = '';
-    const entityType = document.getElementById('entityType').value;
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const data = payload.results || [];
 
-    const filtered = data.filter(entity => {
-        const matchesType = !entityType || entity.type === entityType;
-        const matchesSearch = !searchTerm || entity.name.toLowerCase().includes(searchTerm);
-        return matchesType && matchesSearch;
-    });
-
-    filtered.forEach(entity => {
+    data.forEach(entity => {
         const confidence = entity.confidence;
         const badgeColor = confidence > 0.9 ? 'bg-green-500' : confidence > 0.7 ? 'bg-yellow-500' : 'bg-red-500';
 
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition duration-300';
+    const card = document.createElement('div');
+    card.className = 'bg-white rounded-lg shadow p-5 hover:shadow-xl transition duration-200';
 
         // Build the details section conditionally
         let details = '';
@@ -71,44 +90,81 @@ function renderResults(data) {
         }
 
         card.innerHTML = `
-            <div class="flex justify-between items-start mb-4">
+                <div class="flex justify-between items-start mb-4">
                 <div>
                     <h3 class="text-xl font-bold text-gray-800">${entity.name}</h3>
                     <div class="text-sm text-gray-500 mt-1">Type: <span class="font-semibold">${entity.type}</span></div>
                 </div>
                 <div class="text-right">
-                    <div class="${badgeColor} text-white text-sm px-3 py-1 rounded-full">${(confidence * 100).toFixed(0)}%</div>
+                    <div class="${badgeColor} text-white text-sm px-3 py-1 rounded-full inline-block">${(confidence * 100).toFixed(0)}%</div>
                 </div>
             </div>
             <div class="space-y-2 text-gray-600">
                 ${details}
+                <div class="text-sm mt-2 text-gray-500">ID: <span class="font-mono text-xs">${entity.name.replace(/\s+/g, '-').toLowerCase()}</span></div>
             </div>
         `;
         results.appendChild(card);
     });
 }
 
+function applyQuick(mode){
+    const searchInput = document.getElementById('searchInput');
+    const entityType = document.getElementById('entityType');
+    if(mode === 'recent'){
+        searchInput.value = '';
+        entityType.value = '';
+        doSearch({recent_hours: 24});
+    } else if(mode === 'high_conf'){
+        searchInput.value = '';
+        entityType.value = '';
+        doSearch({min_confidence: 0.8});
+    } else if(mode === 'all'){
+        searchInput.value = '';
+        entityType.value = '';
+        doSearch({});
+    }
+}
+
 async function searchEntities() {
     const loading = document.getElementById('loading');
     loading.classList.remove('hidden');
 
-    let data = [];
-    // server may provide initial_entities in a JSON script tag
-    const script = document.getElementById('initial-entities');
-    if (script) {
-        try {
-            data = JSON.parse(script.textContent || script.innerText || '[]');
-        } catch (e) {
-            console.warn('Failed parsing initial entities JSON', e);
-            data = [];
-        }
-    } else {
-        const response = await fetch('/api/search/');
-        data = await response.json();
+    // use API search with current filters
+    const params = {
+        q: document.getElementById('searchInput').value,
+        type: document.getElementById('entityType').value,
+    };
+    doSearch(params);
+}
+
+async function doSearch(extraParams){
+    const loading = document.getElementById('loading');
+    loading.classList.remove('hidden');
+    const params = new URLSearchParams();
+    const q = extraParams && extraParams.q !== undefined ? extraParams.q : document.getElementById('searchInput').value;
+    const type = extraParams && extraParams.type !== undefined ? extraParams.type : document.getElementById('entityType').value;
+    if(q) params.set('q', q);
+    if(type) params.set('type', type);
+    if(extraParams && extraParams.min_confidence) params.set('min_confidence', extraParams.min_confidence);
+    if(extraParams && extraParams.recent_hours) params.set('recent_hours', extraParams.recent_hours);
+
+    const response = await fetch('/api/search/?' + params.toString());
+    const payload = await response.json();
+    loading.classList.add('hidden');
+
+    // populate stats from payload
+    try{
+        document.getElementById('stat-count').innerText = payload.count || 0;
+        document.getElementById('stat-last').innerText = payload.last_updated ? new Date(payload.last_updated).toLocaleString() : '—';
+        const types = payload.types || {};
+        const pairs = Object.keys(types).slice(0,5).map(k => `${k}: ${types[k]}`);
+        document.getElementById('stat-types').innerText = pairs.join(' · ') || '—';
+    }catch(e){
+        console.warn('Failed parsing payload stats', e);
     }
 
-    loading.classList.add('hidden');
-    renderResults(data);
+    renderResultsFromPayload(payload);
 }
 
 // re-run when filters change

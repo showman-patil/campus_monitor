@@ -1,0 +1,21 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<div class="container mx-auto px-6 py-12">
+  <h1 class="text-2xl font-bold mb-4">Notes</h1>
+  <div class="space-y-3">
+    {% for n in notes %}
+      <div class="bg-white p-3 rounded shadow">
+        <div class="flex justify-between">
+          <div>
+            <div class="text-sm text-gray-600">{{ n.source }}{% if n.entity %} · {{ n.entity.name }}{% endif %}</div>
+            <div class="mt-1">{{ n.text }}</div>
+          </div>
+          <div class="text-sm text-gray-500">{{ n.timestamp }}</div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="text-gray-500">No notes</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

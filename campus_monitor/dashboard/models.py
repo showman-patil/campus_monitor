@@ -139,3 +139,127 @@ def ensure_profile(sender, instance, created, **kwargs):
 	if created:
 		Profile.objects.create(user=instance)
 
+
+# --- Extended schema for the Saptang Labs challenge ---
+
+class Identifier(models.Model):
+	"""Cross-source identifiers for an Entity (card_id, email, student_id, device_hash, face_id, etc.)"""
+	entity = models.ForeignKey(Entity, related_name='identifiers', on_delete=models.CASCADE)
+	id_type = models.CharField(max_length=100)  # e.g., 'card_id', 'email', 'device_hash', 'face_id'
+	id_value = models.CharField(max_length=500, db_index=True)
+	source = models.CharField(max_length=200, blank=True)  # which system provided this id
+	confidence = models.FloatField(null=True, blank=True)
+	metadata = models.JSONField(blank=True, null=True)
+
+	created_at = models.DateTimeField(default=timezone.now)
+
+	class Meta:
+		unique_together = (('id_type', 'id_value'),)
+
+	def __str__(self):
+		return f"{self.id_type}:{self.id_value} -> {self.entity.name}"
+
+
+class SwipeLog(models.Model):
+	card_id = models.CharField(max_length=200, db_index=True)
+	location = models.CharField(max_length=200)
+	timestamp = models.DateTimeField()
+	raw = models.JSONField(blank=True, null=True)
+	created_at = models.DateTimeField(default=timezone.now)
+
+	def __str__(self):
+		return f"Swipe {self.card_id} @ {self.location} @ {self.timestamp.isoformat()}"
+
+
+class WifiLog(models.Model):
+	device_hash = models.CharField(max_length=200, db_index=True)
+	ap_id = models.CharField(max_length=200)
+	timestamp = models.DateTimeField()
+	rssi = models.IntegerField(null=True, blank=True)
+	raw = models.JSONField(blank=True, null=True)
+	created_at = models.DateTimeField(default=timezone.now)
+
+	def __str__(self):
+		return f"WiFi {self.device_hash} @ {self.ap_id} @ {self.timestamp.isoformat()}"
+
+
+class Booking(models.Model):
+	entity = models.ForeignKey(Entity, related_name='bookings', on_delete=models.SET_NULL, null=True, blank=True)
+	resource = models.CharField(max_length=200)
+	start = models.DateTimeField()
+	end = models.DateTimeField()
+	metadata = models.JSONField(blank=True, null=True)
+	created_at = models.DateTimeField(default=timezone.now)
+
+	def __str__(self):
+		who = self.entity.name if self.entity else 'Unknown'
+		return f"Booking {self.resource} for {who} {self.start.isoformat()}"
+
+
+class LibraryCheckout(models.Model):
+	entity = models.ForeignKey(Entity, related_name='checkouts', on_delete=models.SET_NULL, null=True, blank=True)
+	item = models.CharField(max_length=300)
+	checkout_time = models.DateTimeField()
+	due_time = models.DateTimeField(null=True, blank=True)
+	metadata = models.JSONField(blank=True, null=True)
+	created_at = models.DateTimeField(default=timezone.now)
+
+	def __str__(self):
+		who = self.entity.name if self.entity else 'Unknown'
+		return f"Checkout {self.item} by {who} @ {self.checkout_time.isoformat()}"
+
+
+class Note(models.Model):
+	"""Free-text notes from helpdesk, event RSVPs, etc."""
+	entity = models.ForeignKey(Entity, related_name='notes', on_delete=models.SET_NULL, null=True, blank=True)
+	source = models.CharField(max_length=200, blank=True)
+	timestamp = models.DateTimeField()
+	text = models.TextField()
+	metadata = models.JSONField(blank=True, null=True)
+	created_at = models.DateTimeField(default=timezone.now)
+
+	def __str__(self):
+		return f"Note @{self.timestamp.isoformat()} ({self.source})"
+
+
+class FaceEmbedding(models.Model):
+	"""Store face embeddings or image references for face-based linking."""
+	entity = models.ForeignKey(Entity, related_name='face_embeddings', on_delete=models.SET_NULL, null=True, blank=True)
+	embedding = models.BinaryField(blank=True, null=True)  # store raw bytes if needed
+	vector = models.JSONField(blank=True, null=True)  # or a JSON list of floats
+	image_ref = models.CharField(max_length=500, blank=True)
+	source = models.CharField(max_length=200, blank=True)
+	confidence = models.FloatField(null=True, blank=True)
+	timestamp = models.DateTimeField(null=True, blank=True)
+	created_at = models.DateTimeField(default=timezone.now)
+
+	def __str__(self):
+		return f"FaceEmb for {self.entity.name if self.entity else 'Unknown'} @ {self.timestamp}"
+
+
+class ResolutionLink(models.Model):
+	"""A link that indicates two identifiers/entities are considered the same with a confidence score and provenance."""
+	left_type = models.CharField(max_length=100)
+	left_value = models.CharField(max_length=500)
+	right_type = models.CharField(max_length=100)
+	right_value = models.CharField(max_length=500)
+	confidence = models.FloatField(null=True, blank=True)
+	evidence = models.JSONField(blank=True, null=True)
+	created_at = models.DateTimeField(default=timezone.now)
+
+	def __str__(self):
+		return f"Link {self.left_type}:{self.left_value} ⇄ {self.right_type}:{self.right_value} ({self.confidence})"
+
+
+class DataProvenance(models.Model):
+	"""Track provenance for imported records so predictions and links can be explained."""
+	source = models.CharField(max_length=200)
+	record_type = models.CharField(max_length=200)
+	record_id = models.CharField(max_length=400)
+	raw = models.JSONField(blank=True, null=True)
+	imported_at = models.DateTimeField(default=timezone.now)
+
+	def __str__(self):
+		return f"{self.source} {self.record_type}:{self.record_id}"
+
+
