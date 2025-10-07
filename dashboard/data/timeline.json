@@ -1,0 +1,8 @@
+[
+  {"time": "09:10", "event": "Swipe at Gate_1", "icon": "🪪"},
+  {"time": "10:30", "event": "Library Checkout", "icon": "📚"},
+  {"time": "11:05", "event": "Connected to Wi-Fi (AP_23)", "icon": "📡"},
+  {"time": "13:20", "event": "Lab Booking", "icon": "🚪"},
+  {"time": "14:45", "event": "Canteen Entry", "icon": "🍽️"},
+  {"time": "16:00", "event": "Lecture Hall Check-in", "icon": "🎓"}
+]

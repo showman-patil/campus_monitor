@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Rahul Patel",
+    "type": "Student",
+    "source": "Wi-Fi Log",
+    "timestamp": "2025-10-07T09:15",
+    "confidence": 0.93
+  },
+  {
+    "name": "Rahul Patel",
+    "type": "Student",
+    "source": "Library",
+    "timestamp": "2025-10-07T10:30",
+    "confidence": 0.88
+  },
+  {
+    "name": "Priya Sharma",
+    "type": "Student",
+    "source": "Card Access",
+    "timestamp": "2025-10-07T08:45",
+    "confidence": 0.95
+  },
+  {
+    "name": "Dr. Kumar",
+    "type": "Staff",
+    "source": "Wi-Fi Log",
+    "timestamp": "2025-10-07T09:00",
+    "confidence": 0.91
+  },
+  {
+    "name": "Laptop-124",
+    "type": "Asset",
+    "source": "Device Log",
+    "timestamp": "2025-10-06T18:00",
+    "confidence": 0.85
+  }
+]
