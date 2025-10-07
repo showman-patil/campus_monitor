@@ -1,0 +1,67 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="bg-gradient-to-r from-blue-500 to-indigo-600 animate-gradient text-white py-20">
+    <div class="container mx-auto px-6 text-center">
+        <h1 class="text-5xl font-bold mb-4">Campus Entity Resolution & Security Monitoring System</h1>
+        <p class="text-xl mb-2">Intelligent platform unifying campus data for enhanced security</p>
+        <p class="text-lg opacity-90">Real-time entity resolution, timeline reconstruction & predictive analytics</p>
+    </div>
+</div>
+
+<div class="container mx-auto px-6 py-12">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <a href="/search/" class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
+            <div class="text-4xl mb-4">🔍</div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Entity Search</h3>
+            <p class="text-gray-600">Search and resolve campus entities with confidence scores</p>
+        </a>
+
+        <a href="/timeline/" class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
+            <div class="text-4xl mb-4">🕒</div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Timeline</h3>
+            <p class="text-gray-600">View chronological activity and event reconstruction</p>
+        </a>
+
+        <a href="/predict/" class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
+            <div class="text-4xl mb-4">🧭</div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Predictions</h3>
+            <p class="text-gray-600">AI-powered location inference and activity prediction</p>
+        </a>
+
+        <a href="/alerts/" class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
+            <div class="text-4xl mb-4">🚨</div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Alerts</h3>
+            <p class="text-gray-600">Security monitoring and inactive entity detection</p>
+        </a>
+    </div>
+
+    <div class="mt-12 text-center">
+        <div class="bg-white rounded-lg shadow-lg p-6 inline-block">
+            <div class="text-gray-600 mb-2">Current Time</div>
+            <div id="clock" class="text-3xl font-bold text-indigo-600"></div>
+            <div id="date" class="text-gray-500 mt-2"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateClock() {
+    const now = new Date();
+    const clockEl = document.getElementById('clock');
+    const dateEl = document.getElementById('date');
+    
+    if (clockEl && dateEl) {
+        clockEl.textContent = now.toLocaleTimeString();
+        dateEl.textContent = now.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+    }
+}
+updateClock();
+setInterval(updateClock, 1000);
+</script>
+{% endblock %}

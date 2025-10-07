@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Entity Resolution & Security Monitoring System</title>
+    <link href="/static/dashboard/styles.css" rel="stylesheet">
+    <style>
+        @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .animate-gradient {
+            background-size: 200% 200%;
+            animation: gradient 15s ease infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="text-xl font-bold">Campus Monitor</div>
+                <div class="flex space-x-6">
+                    <a href="/" class="hover:text-blue-200 transition duration-300 {% if request.path == '/' %}border-b-2 border-white{% endif %}">Home</a>
+                    <a href="/search/" class="hover:text-blue-200 transition duration-300 {% if request.path == '/search/' %}border-b-2 border-white{% endif %}">Search</a>
+                    <a href="/timeline/" class="hover:text-blue-200 transition duration-300 {% if request.path == '/timeline/' %}border-b-2 border-white{% endif %}">Timeline</a>
+                    <a href="/predict/" class="hover:text-blue-200 transition duration-300 {% if request.path == '/predict/' %}border-b-2 border-white{% endif %}">Predictions</a>
+                    <a href="/alerts/" class="hover:text-blue-200 transition duration-300 {% if request.path == '/alerts/' %}border-b-2 border-white{% endif %}">Alerts</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-6 text-center">
+            <p>Built for Saptang Labs Challenge 2025</p>
+        </div>
+    </footer>
+
+    <script src="/static/dashboard/script.js"></script>
+</body>
+</html>

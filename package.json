@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "build:css": "npx @tailwindcss/cli -i ./input.css -o ./campus_monitor/dashboard/static/dashboard/styles.css --minify",
+    "watch:css": "npx @tailwindcss/cli -i ./input.css -o ./campus_monitor/dashboard/static/dashboard/styles.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.14",
+    "tailwindcss": "^4.1.14"
+  }
+}
