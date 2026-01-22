@@ -1,0 +1,88 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="bg-gradient-to-r from-blue-500 to-indigo-600 animate-gradient text-white py-20">
+    <div class="container mx-auto px-6 text-center">
+        <h1 class="text-5xl font-bold mb-4">Campus Entity Resolution & Security Monitoring System</h1>
+        <p class="text-xl mb-2">Intelligent platform unifying campus data for enhanced security</p>
+        <p class="text-lg opacity-90">Real-time entity resolution, timeline reconstruction & predictive analytics</p>
+    </div>
+</div>
+
+<div class="container mx-auto px-6 py-12">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <a href="/search/" class="card p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
+            <div class="text-4xl mb-4">🔍</div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Entity Search</h3>
+            <p class="text-gray-600">Search and resolve campus entities with confidence scores</p>
+        </a>
+
+        <a href="/timeline/" class="card p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
+            <div class="text-4xl mb-4">🕒</div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Timeline</h3>
+            <p class="text-gray-600">View chronological activity and event reconstruction</p>
+        </a>
+
+        <a href="/predict/" class="card p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
+            <div class="text-4xl mb-4">🧭</div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Predictions</h3>
+            <p class="text-gray-600">AI-powered location inference and activity prediction</p>
+        </a>
+
+        <a href="/alerts/" class="card p-6 hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
+            <div class="text-4xl mb-4">🚨</div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Alerts</h3>
+            <p class="text-gray-600">Security monitoring and inactive entity detection</p>
+        </a>
+    </div>
+
+    <div class="mt-12 text-center">
+        <div class="card p-6 inline-block">
+            <div class="text-gray-600 mb-2">Current Time</div>
+            <div id="clock" class="text-3xl font-bold text-indigo-600">{{ server_date|time:"H:i:s" }}</div>
+            <div id="date" class="text-gray-500 mt-2">{{ server_date|date:"l, F j, Y" }}</div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize client clock from server-provided datetime so the page shows
+// DB-derived time immediately, then tick forward locally.
+function updateClock() {
+    const clockEl = document.getElementById('clock');
+    const dateEl = document.getElementById('date');
+    if (!clockEl || !dateEl) return;
+
+    // Try to read server_date from a data attribute injected below.
+    const serverDateIso = document.body.getAttribute('data-server-date');
+    let now = serverDateIso ? new Date(serverDateIso) : new Date();
+
+    // If we've already been ticking, preserve current client time in the element.
+    const prevText = clockEl.getAttribute('data-client-ts');
+    if (prevText) {
+        now = new Date(parseInt(prevText, 10));
+    }
+
+    // Display and advance one second for next tick.
+    clockEl.textContent = now.toLocaleTimeString();
+    dateEl.textContent = now.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+
+    // store next tick's timestamp (ms)
+    now = new Date(now.getTime() + 1000);
+    clockEl.setAttribute('data-client-ts', String(now.getTime()));
+}
+
+updateClock();
+setInterval(updateClock, 1000);
+</script>
+<!-- embed the server date as an ISO attribute so JS can initialize correctly -->
+{% if server_date %}
+<script>document.body.setAttribute('data-server-date', '{{ server_date.isoformat }}');</script>
+{% endif %}
+</script>
+{% endblock %}
